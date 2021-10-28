@@ -35,6 +35,12 @@ AKS Demo application for Azure Community Conference 2021
         --admin
     ```
 
+4. Verify whether `csi-driver` pods are `running`.
+
+    ```sh
+    kubectl get pods -n kube-system
+    ```
+
 ## Demo 1: Azure Disk as Persistent Volume
 
 1. Deploy `voting-app`, which includes a python frontend service and redis backend service with `Azure Disk` as persistent volume.
