@@ -1,0 +1,137 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: voting-backend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: backend
+spec:
+  storageClassName: managed-csi-premium
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voting-backend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: backend
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: voting-app
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: voting-app
+        component: backend
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: voting-backend        
+        image: redis:6.2.6
+        args: ["--appendonly", "yes", "--save", "900", "1", "--save", "30", "2"]
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+        ports:
+        - name: redis
+          containerPort: 6379
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: voting-backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voting-backend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+  selector:
+    app: voting-app
+    component: backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voting-frontend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: voting-app
+      component: frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: voting-app
+        component: frontend
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: voting-frontend
+        image: mcr.microsoft.com/azuredocs/azure-vote-front:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: REDIS
+          value: "voting-backend"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voting-frontend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: frontend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: voting-app
+    component: frontend

@@ -1,0 +1,26 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshotClass
+metadata:
+  name: voting-backend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: backend
+driver: disk.csi.azure.com
+deletionPolicy: Delete
+parameters:
+  incremental: "true"  # available values: "true", "false" ("true" by default for Azure Public Cloud)
+---
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshot
+metadata:
+  name: voting-backend
+  namespace: voting-app
+  labels:
+    app: voting-app
+    component: backend
+spec:
+  volumeSnapshotClassName: voting-backend
+  source:
+    persistentVolumeClaimName: voting-backend
