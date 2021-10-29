@@ -15,7 +15,7 @@ parameters:
 apiVersion: snapshot.storage.k8s.io/v1beta1
 kind: VolumeSnapshot
 metadata:
-  name: voting-backend
+  name: voting-backend-1
   namespace: voting-app
   labels:
     app: voting-app

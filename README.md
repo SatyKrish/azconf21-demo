@@ -46,10 +46,12 @@ AKS Demo application for Azure Community Conference 2021
 1. Deploy `voting-app`, which includes a python frontend service and redis backend service with `Azure Disk` as persistent volume.
 
     ```sh
+    kubectl create namespace voting-app
+
     kubectl apply -f manifests/1-voting-app-deploy.yaml
     ```
 
-    Watch the pods are in `running` state.
+    Watch the pods until they are in `running` state.
 
     ```sh
     watch kubectl get all -n voting-app
@@ -57,7 +59,13 @@ AKS Demo application for Azure Community Conference 2021
 
     Open `frontend` service external-ip in a browse for `voting-app` to load. Click the poll options few times to increase the count.
 
-2. Backup `voting-app` persistent volume using CSI `volumesnapshot` function.
+4. Verify whether the data persisted in Persistent volume mounted at `/data` path.
+
+    ```sh
+    kubectl exec -it $(kubectl get pod -n voting-app -l app=voting-app -o jsonpath='{.items[0].metadata.name}') -n voting-app -- sh
+    ```
+
+3. Backup `voting-app` persistent volume using CSI `volumesnapshot` function.
 
     ```sh
     kubectl apply -f manifests/2-voting-app-backup.yaml
@@ -73,7 +81,12 @@ AKS Demo application for Azure Community Conference 2021
     kubectl describe volumesnapshotcontent <name> -n voting-app
     ```
 
-3. Restore `voting-app` persistent volume from CSI `volumesnapshot` function.
+4. Simulate disaster by deleting `voting-app`.
+
+    ```sh
+    kubectl delete -f manifests/1-voting-app-deploy.yaml
+    ``` 
+5. Restore `voting-app` persistent volume from CSI `volumesnapshot` function.
 
     ```sh
     kubectl apply -f manifests/3-voting-app-restore.yaml
@@ -92,8 +105,8 @@ AKS Demo application for Azure Community Conference 2021
 1. Create a general-purpose storage account and a file share with `1G1` storage capacity.
 
     ```sh
-    STORAGE_ACCOUNT=`azcconf21demostorage`
-    FILE_SHARE=`azcconf21demoshare`
+    STORAGE_ACCOUNT='azcconf21demostorage'
+    FILE_SHARE='azcconf21demoshare'
 
     az storage account create \
         --resource-group $RESOURCE_GROUP \
@@ -127,10 +140,12 @@ AKS Demo application for Azure Community Conference 2021
 3. Deploy hello-world application with `Azure Files` persistent volume mounted using managed identity.
 
     ```sh
+    kubectl create namespace hello-world-app
+    
     kubectl apply -f manifests/4-hello-world-app-deploy.yaml
     ```
 
-    Watch the pods are in `running` state.
+    Watch the pods until they are in `running` state.
 
     ```sh
     watch kubectl get all -n hello-world-app
